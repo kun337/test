@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오스템 영업팀 예산 관리 시스템 (관리자용)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (XLSX) CDN for clean, non-corrupted Excel exports -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        osstem: {
+                            blue: '#003366',
+                            navy: '#0A192F',
+                            orange: '#FF6600',
+                            lightbg: '#F4F6F9',
+                            card: '#FFFFFF',
+                            border: '#E2E8F0',
+                            accent: '#2563EB'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: #F8FAFC;
+        }
+        /* Custom Scrollbar for tables */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Top Header Navigation -->
+    <header class="bg-osstem-blue text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-osstem-orange text-white font-black px-2.5 py-1 rounded text-lg tracking-wider">OSSTEM</div>
+                <div>
+                    <h1 class="text-lg font-bold leading-none">영업팀 예산 관리 시스템</h1>
+                    <span class="text-xs text-blue-200">Manager Dashboard & Budget Control</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <span class="bg-blue-900 text-blue-200 text-xs px-3 py-1 rounded-full border border-blue-700 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    관리자 권한 (팀장)
+                </span>
+                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-2 shadow-sm">
+                    <i class="fa-solid font-bold fa-file-excel"></i>
+                    <span>엑셀 다운로드</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Quick Filter & Alert Bar -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-filter text-osstem-blue"></i> 조회 필터:
+                </span>
+                
+                <!-- Month Filter -->
+                <select id="filterMonth" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-osstem-blue focus:outline-none">
+                    <option value="ALL">전체 월 보기</option>
+                    <option value="2026-09" selected>2026년 9월 (현재월)</option>
+                    <option value="2026-08">2026년 8월</option>
+                    <option value="2026-07">2026년 7월</option>
+                </select>
+
+                <!-- Team Member Filter -->
+                <select id="filterMember" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-osstem-blue focus:outline-none">
+                    <option value="ALL">전체 팀원</option>
+                    <option value="김민수 팀장">김민수 팀장</option>
+                    <option value="이영희 과장">이영희 과장</option>
+                    <option value="박지훈 대리">박지훈 대리</option>
+                    <option value="최성민 대리">최성민 대리</option>
+                    <option value="정아름 사원">정아름 사원</option>
+                </select>
+
+                <!-- Category Filter -->
+                <select id="filterCategory" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-osstem-blue focus:outline-none">
+                    <option value="ALL">전체 예산 항목</option>
+                    <option value="고객 접대비">고객 접대비</option>
+                    <option value="제품 설명회/세미나">제품 설명회/세미나</option>
+                    <option value="지방 출장비">지방 출장비</option>
+                    <option value="학회 및 전시회 지원">학회 및 전시회 지원</option>
+                    <option value="영업 샘플 및 소모품">영업 샘플 및 소모품</option>
+                    <option value="기타 영업비">기타 영업비</option>
+                </select>
+
+                <button onclick="resetFilters()" class="text-xs text-slate-500 hover:text-slate-800 underline ml-1">
+                    필터 초기화
+                </button>
+            </div>
+
+            <!-- Action Status Alert -->
+            <div id="statusAlert" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-blue-600"></i>
+                <span id="statusAlertText">실시간 현황 분석 중...</span>
+            </div>
+        </div>
+
+        <!-- Key Performance Indicators (KPI Cards) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <!-- Card 1: Total Cumulative Spend -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-osstem-blue"></div>
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 tracking-wide uppercase">전체 누적 사용액</p>
+                        <h3 id="kpiTotalSpend" class="text-2xl font-black text-slate-900 mt-1">0 원</h3>
+                    </div>
+                    <div class="p-2.5 bg-blue-50 rounded-lg text-osstem-blue">
+                        <i class="fa-solid fa-won-sign text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                    <span class="text-slate-500">선택 조건 내 집계금액</span>
+                    <span id="kpiMonthlyTargetRatio" class="font-bold text-emerald-600">월 예산 소진율: 0%</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Top Category This Month -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-osstem-orange"></div>
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 tracking-wide uppercase">이번달 최대 사용항목</p>
+                        <h3 id="kpiTopCategory" class="text-xl font-black text-slate-900 mt-1 truncate max-w-[200px]">-</h3>
+                    </div>
+                    <div class="p-2.5 bg-orange-50 rounded-lg text-osstem-orange">
+                        <i class="fa-solid fa-chart-pie text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                    <span id="kpiTopCategoryAmount" class="text-slate-600 font-semibold">0 원</span>
+                    <span id="kpiTopCategoryShare" class="font-bold text-osstem-orange">전체 중 0%</span>
+                </div>
+            </div>
+
+            <!-- Card 3: Record Count & Data Health -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-slate-700"></div>
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 tracking-wide uppercase">데이터 건수</p>
+                        <h3 id="kpiRecordCount" class="text-2xl font-black text-slate-900 mt-1">0 건</h3>
+                    </div>
+                    <div class="p-2.5 bg-slate-100 rounded-lg text-slate-700">
+                        <i class="fa-solid fa-list-check text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                    <span class="text-slate-500">평균 건당 결제액</span>
+                    <span id="kpiAvgAmount" class="font-bold text-slate-800">0 원</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualization Dashboard Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Chart 1: Category Budget Distribution -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-osstem-orange"></i>
+                            항목별 예산 분포
+                        </h2>
+                        <span class="text-xs text-slate-400">지출 비중 및 주요 집계</span>
+                    </div>
+                    <div class="h-64 relative flex items-center justify-center">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                <!-- Category Summary Mini-List -->
+                <div id="categoryBreakdownList" class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Chart 2: Cumulative Spend by Team Member -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-users text-osstem-blue"></i>
+                            팀원별 누적 사용금액
+                        </h2>
+                        <span class="text-xs text-slate-400">팀원별 사용 한도 체크</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="memberChart"></canvas>
+                    </div>
+                </div>
+                <!-- Member Summary Mini List -->
+                <div id="memberBreakdownList" class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-xs">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Form Section (4 Core Fields) -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="bg-slate-800 text-white px-6 py-3 flex items-center justify-between">
+                <h2 class="text-sm font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-osstem-orange"></i>
+                    영업 예산 사용 내역 신규 등록
+                </h2>
+                <span class="text-xs text-slate-300">* 관리자 입력 전용</span>
+            </div>
+
+            <form id="budgetForm" onsubmit="handleFormSubmit(event)" class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    
+                    <!-- 1. 팀원 선택 -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                            1. 팀원 선택 <span class="text-red-500">*</span>
+                        </label>
+                        <select id="inputMember" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                            <option value="">팀원을 선택하세요</option>
+                            <option value="김민수 팀장">김민수 팀장</option>
+                            <option value="이영희 과장">이영희 과장</option>
+                            <option value="박지훈 대리">박지훈 대리</option>
+                            <option value="최성민 대리">최성민 대리</option>
+                            <option value="정아름 사원">정아름 사원</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. 해당 월 (& 세부 날짜) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                            2. 사용 일자 / 해당 월 <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" id="inputDate" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                    </div>
+
+                    <!-- 3. 예산 항목 -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                            3. 예산 항목 <span class="text-red-500">*</span>
+                        </label>
+                        <select id="inputCategory" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                            <option value="">항목을 선택하세요</option>
+                            <option value="고객 접대비">고객 접대비</option>
+                            <option value="제품 설명회/세미나">제품 설명회/세미나</option>
+                            <option value="지방 출장비">지방 출장비</option>
+                            <option value="학회 및 전시회 지원">학회 및 전시회 지원</option>
+                            <option value="영업 샘플 및 소모품">영업 샘플 및 소모품</option>
+                            <option value="기타 영업비">기타 영업비</option>
+                        </select>
+                    </div>
+
+                    <!-- 4. 사용금액 -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                            4. 사용금액 (원) <span class="text-red-500">*</span>
+                        </label>
+                        <input type="number" id="inputAmount" min="0" step="1000" placeholder="예: 150000" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Auxiliary Note/Memo Input -->
+                <div class="mt-4 flex flex-col md:flex-row gap-4 items-end">
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">적요 / 세부 사용목적 (선택)</label>
+                        <input type="text" id="inputNote" placeholder="예: 서울 치과 원장단 세미나 석식 접대" class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                    </div>
+                    <button type="submit" class="w-full md:w-auto bg-osstem-orange hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 shadow-md">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>내역 등록하기</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Data Table (입력 내역 테이블) -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-table-list text-osstem-blue"></i>
+                        예산 사용 내역목록
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">요청 표준 포맷: [날짜 | 팀원 | 항목 | 금액]</p>
+                </div>
+
+                <!-- Table Search & Export -->
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="내역 내 검색..." class="text-xs bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-osstem-blue w-48">
+                    </div>
+                    <button onclick="exportToExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel"></i>
+                        <span>XLSX 추출</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Body Container -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold border-b border-slate-200">
+                        <tr>
+                            <th class="py-3 px-4 w-28">날짜</th>
+                            <th class="py-3 px-4 w-28">팀원</th>
+                            <th class="py-3 px-4 w-36">항목</th>
+                            <th class="py-3 px-4 text-right w-36">금액</th>
+                            <th class="py-3 px-4">적요/비고</th>
+                            <th class="py-3 px-4 text-center w-24">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y divide-slate-200 text-slate-800">
+                        <!-- Populated dynamically via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer Summary -->
+            <div class="bg-slate-100 px-6 py-3 border-t border-slate-200 flex justify-between items-center text-xs font-bold text-slate-700">
+                <span>조회 결과 총 <span id="tableFilteredCount" class="text-osstem-blue font-black">0</span> 건</span>
+                <span>합계 금액: <span id="tableFilteredTotal" class="text-slate-900 text-sm font-black">0</span> 원</span>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-6 mt-8 text-center text-xs border-t border-slate-800">
+        <p>오스템임플란트 영업관리본부 | 영업팀 예산 관리 대시보드 v2.5</p>
+        <p class="text-slate-500 mt-1">본 시스템은 오스템 영업 관리자의 실시간 의사결정 및 예산 관리를 위해 최적화되었습니다.</p>
+    </footer>
+
+    <script>
+        // Initial Mock Dataset for Osstem Sales Team
+        let budgetData = [
+            { id: 1, date: '2026-09-28', month: '2026-09', member: '최성민 대리', category: '고객 접대비', amount: 350000, note: '강남 대형 치과 원장 만찬 간담회' },
+            { id: 2, date: '2026-09-25', month: '2026-09', member: '이영희 과장', category: '제품 설명회/세미나', amount: 1200000, note: '임플란트 신제품 Q-Master 설명회 대관' },
+            { id: 3, date: '2026-09-22', month: '2026-09', member: '박지훈 대리', category: '지방 출장비', amount: 280000, note: '부산/경남 지역 주요 거래처 순회' },
+            { id: 4, date: '2026-09-18', month: '2026-09', member: '김민수 팀장', category: '학회 및 전시회 지원', amount: 850000, note: '대한치과의사협회 종합학회 부스 지원' },
+            { id: 5, date: '2026-09-15', month: '2026-09', member: '정아름 사원', category: '영업 샘플 및 소모품', amount: 420000, note: '신규 개원치과 홍보용 판촉 샘플' },
+            { id: 6, date: '2026-09-10', month: '2026-09', member: '최성민 대리', category: '고객 접대비', amount: 220000, note: '송파 지역 주임의사 오찬 간담회' },
+            { id: 7, date: '2026-09-05', month: '2026-09', member: '이영희 과장', category: '기타 영업비', amount: 150000, note: '영업팀 전략 회의 음료 및 다과 구입' },
+            { id: 8, date: '2026-08-28', month: '2026-08', member: '김민수 팀장', category: '제품 설명회/세미나', amount: 950000, note: '8월 수도권 개원의 세미나' },
+            { id: 9, date: '2026-08-14', month: '2026-08', member: '박지훈 대리', category: '고객 접대비', amount: 180000, note: '인천 거래처 원장 면담' },
+            { id: 10, date: '2026-08-02', month: '2026-08', member: '정아름 사원', category: '지방 출장비', amount: 210000, note: '대전/세종 지역 현장 출장' }
+        ];
+
+        // Chart Instance Holders
+        let categoryChartInstance = null;
+        let memberChartInstance = null;
+
+        // Initialize App on DOM Load
+        window.onload = function() {
+            // Set default date in form to today
+            document.getElementById('inputDate').value = new Date().toISOString().slice(0, 10);
+            
+            // Initial Render
+            renderDashboard();
+        };
+
+        function getFilteredData() {
+            const filterMonth = document.getElementById('filterMonth').value;
+            const filterMember = document.getElementById('filterMember').value;
+            const filterCategory = document.getElementById('filterCategory').value;
+            const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            return budgetData.filter(item => {
+                const matchMonth = (filterMonth === 'ALL') || (item.month === filterMonth);
+                const matchMember = (filterMember === 'ALL') || (item.member === filterMember);
+                const matchCategory = (filterCategory === 'ALL') || (item.category === filterCategory);
+                const matchSearch = !searchInput || 
+                    item.member.toLowerCase().includes(searchInput) ||
+                    item.category.toLowerCase().includes(searchInput) ||
+                    item.date.includes(searchInput) ||
+                    (item.note && item.note.toLowerCase().includes(searchInput));
+
+                return matchMonth && matchMember && matchCategory && matchSearch;
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById('filterMonth').value = '2026-09';
+            document.getElementById('filterMember').value = 'ALL';
+            document.getElementById('filterCategory').value = 'ALL';
+            document.getElementById('searchInput').value = '';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            const data = getFilteredData();
+
+            // 1. Calculate Core KPIs
+            const totalSpend = data.reduce((sum, item) => sum + item.amount, 0);
+            const recordCount = data.length;
+            const avgAmount = recordCount > 0 ? Math.round(totalSpend / recordCount) : 0;
+
+            // Category Breakdown for Top Category Calculation
+            const categorySums = {};
+            data.forEach(item => {
+                categorySums[item.category] = (categorySums[item.category] || 0) + item.amount;
+            });
+
+            let topCategory = '-';
+            let topCategoryAmount = 0;
+            for (const [cat, amt] of Object.entries(categorySums)) {
+                if (amt > topCategoryAmount) {
+                    topCategoryAmount = amt;
+                    topCategory = cat;
+                }
+            }
+            const topCategoryShare = totalSpend > 0 ? ((topCategoryAmount / totalSpend) * 100).toFixed(1) : 0;
+
+            // Monthly Target assumption (5,000,000 KRW per month)
+            const monthlyTarget = 5000000;
+            const targetRatio = ((totalSpend / monthlyTarget) * 100).toFixed(1);
+
+            // Update KPI DOM
+            document.getElementById('kpiTotalSpend').innerText = totalSpend.toLocaleString() + ' 원';
+            document.getElementById('kpiMonthlyTargetRatio').innerText = `월 기준 예산 소진율: ${targetRatio}%`;
+            document.getElementById('kpiTopCategory').innerText = topCategory;
+            document.getElementById('kpiTopCategoryAmount').innerText = topCategoryAmount.toLocaleString() + ' 원';
+            document.getElementById('kpiTopCategoryShare').innerText = `전체 중 ${topCategoryShare}%`;
+            document.getElementById('kpiRecordCount').innerText = recordCount + ' 건';
+            document.getElementById('kpiAvgAmount').innerText = avgAmount.toLocaleString() + ' 원';
+
+            // Manager Alert Bar Message
+            const alertText = document.getElementById('statusAlertText');
+            if (targetRatio > 90) {
+                alertText.innerHTML = `<span class="text-red-600 font-bold">⚠️ 경고: 예산 소진율이 ${targetRatio}%로 한도 임박 상태입니다.</span>`;
+            } else if (topCategoryAmount > 1500000) {
+                alertText.innerHTML = `<span class="text-orange-600 font-bold">💡 알림: '${topCategory}' 항목에 지출이 집중되었습니다.</span>`;
+            } else {
+                alertText.innerText = `정상 관리 중 (총 ${recordCount}건 집계 완료)`;
+            }
+
+            // 2. Render Data Table
+            renderTable(data, totalSpend);
+
+            // 3. Render Charts & Lists
+            renderCategoryChart(categorySums, totalSpend);
+            renderMemberChart(data);
+        }
+
+        function renderTable(data, totalSpend) {
+            const tbody = document.getElementById('dataTableBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>
+                            조건에 일치하는 예산 내역이 없습니다.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // Sort by date descending
+                const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                sortedData.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition';
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-mono text-xs text-slate-600">${item.date}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-900">${escapeHtml(item.member)}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-block px-2 py-0.5 text-xs rounded font-medium ${getCategoryBadgeColor(item.category)}">
+                                ${escapeHtml(item.category)}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right font-bold text-slate-900 font-mono">
+                            ${item.amount.toLocaleString()} 원
+                        </td>
+                        <td class="py-3 px-4 text-xs text-slate-600 truncate max-w-xs" title="${escapeHtml(item.note || '')}">
+                            ${escapeHtml(item.note || '-')}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="deleteRecord(${item.id})" class="text-slate-400 hover:text-red-600 p-1 rounded transition" title="삭제">
+                                <i class="fa-solid fa-trash-can text-sm"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('tableFilteredCount').innerText = data.length;
+            document.getElementById('tableFilteredTotal').innerText = totalSpend.toLocaleString();
+        }
+
+        function getCategoryBadgeColor(category) {
+            switch(category) {
+                case '고객 접대비': return 'bg-orange-100 text-orange-800 border border-orange-200';
+                case '제품 설명회/세미나': return 'bg-blue-100 text-blue-800 border border-blue-200';
+                case '지방 출장비': return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+                case '학회 및 전시회 지원': return 'bg-purple-100 text-purple-800 border border-purple-200';
+                case '영업 샘플 및 소모품': return 'bg-amber-100 text-amber-800 border border-amber-200';
+                default: return 'bg-slate-100 text-slate-800 border border-slate-200';
+            }
+        }
+
+        function renderCategoryChart(categorySums, totalSpend) {
+            const labels = Object.keys(categorySums);
+            const values = Object.values(categorySums);
+            
+            const backgroundColors = [
+                '#FF6600', '#003366', '#10B981', '#8B5CF6', '#F59E0B', '#64748B'
+            ];
+
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+
+            if (categoryChartInstance) {
+                categoryChartInstance.destroy();
+            }
+
+            categoryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: backgroundColors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                font: { size: 11, family: 'Pretendard' }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    const pct = totalSpend > 0 ? ((val / totalSpend) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${val.toLocaleString()}원 (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            // Populate Mini Breakdown List
+            const breakdownList = document.getElementById('categoryBreakdownList');
+            breakdownList.innerHTML = '';
+            labels.forEach((cat, idx) => {
+                const amt = categorySums[cat];
+                const pct = totalSpend > 0 ? ((amt / totalSpend) * 100).toFixed(1) : 0;
+                breakdownList.innerHTML += `
+                    <div class="flex items-center justify-between p-1.5 bg-slate-50 rounded border border-slate-100">
+                        <span class="truncate flex items-center gap-1.5 text-slate-700">
+                            <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: ${backgroundColors[idx % backgroundColors.length]}"></span>
+                            ${cat}
+                        </span>
+                        <span class="font-bold text-slate-900">${pct}%</span>
+                    </div>
+                `;
+            });
+        }
+
+        function renderMemberChart(data) {
+            const memberSums = {};
+            data.forEach(item => {
+                memberSums[item.member] = (memberSums[item.member] || 0) + item.amount;
+            });
+
+            const labels = Object.keys(memberSums);
+            const values = Object.values(memberSums);
+
+            const ctx = document.getElementById('memberChart').getContext('2d');
+
+            if (memberChartInstance) {
+                memberChartInstance.destroy();
+            }
+
+            memberChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '누적 사용금액 (원)',
+                        data: values,
+                        backgroundColor: '#003366',
+                        borderRadius: 6,
+                        hoverBackgroundColor: '#FF6600'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` 사용액: ${context.raw.toLocaleString()} 원`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 10000).toLocaleString() + ' 만원';
+                                },
+                                font: { size: 10 }
+                            }
+                        },
+                        x: {
+                            ticks: { font: { size: 11, family: 'Pretendard' } }
+                        }
+                    }
+                }
+            });
+
+            // Populate Mini Member List
+            const memberList = document.getElementById('memberBreakdownList');
+            memberList.innerHTML = '';
+            labels.forEach(mem => {
+                const amt = memberSums[mem];
+                memberList.innerHTML += `
+                    <div class="p-2 bg-slate-50 rounded border border-slate-100 text-center">
+                        <p class="text-slate-500 text-[10px] truncate">${mem}</p>
+                        <p class="font-bold text-slate-900 text-xs mt-0.5">${amt.toLocaleString()}원</p>
+                    </div>
+                `;
+            });
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const member = document.getElementById('inputMember').value;
+            const date = document.getElementById('inputDate').value;
+            const category = document.getElementById('inputCategory').value;
+            const amount = parseInt(document.getElementById('inputAmount').value, 10);
+            const note = document.getElementById('inputNote').value.trim();
+
+            if (!member || !date || !category || isNaN(amount) || amount <= 0) {
+                showToast('모든 필수 항목을 올바르게 입력해주세요.', 'error');
+                return;
+            }
+
+            const month = date.slice(0, 7); // Extract YYYY-MM
+
+            const newRecord = {
+                id: Date.now(),
+                date: date,
+                month: month,
+                member: member,
+                category: category,
+                amount: amount,
+                note: note
+            };
+
+            budgetData.unshift(newRecord);
+
+            // Clear input form
+            document.getElementById('inputAmount').value = '';
+            document.getElementById('inputNote').value = '';
+
+            showToast('예산 내역이 성공적으로 등록되었습니다.', 'success');
+            renderDashboard();
+        }
+
+        function deleteRecord(id) {
+            if (confirm('해당 예산 사용 내역을 삭제하시겠습니까?')) {
+                budgetData = budgetData.filter(item => item.id !== id);
+                showToast('내역이 삭제되었습니다.', 'info');
+                renderDashboard();
+            }
+        }
+
+        function exportToExcel() {
+            const dataToExport = getFilteredData();
+
+            if (dataToExport.length === 0) {
+                alert('다운로드할 데이터가 없습니다.');
+                return;
+            }
+
+            // Map data to requested clean Excel format: | 날짜 | 팀원 | 항목 | 금액 | (+ 비고)
+            const excelRows = dataToExport.map(item => ({
+                '날짜': item.date,
+                '팀원': item.member,
+                '항목': item.category,
+                '금액(원)': item.amount,
+                '사용목적/비고': item.note || ''
+            }));
+
+            // Create SheetJS Worksheet
+            const worksheet = XLSX.utils.json_to_sheet(excelRows);
+
+            // Auto-adjust Column Widths
+            const colWidths = [
+                { wch: 14 }, // 날짜
+                { wch: 14 }, // 팀원
+                { wch: 22 }, // 항목
+                { wch: 16 }, // 금액
+                { wch: 35 }  // 비고
+            ];
+            worksheet['!cols'] = colWidths;
+
+            // Create Workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "예산사용내역");
+
+            // Current date string for filename
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const fileName = `오스템영업팀_예산내역_${todayStr}.xlsx`;
+
+            // Export pure XLSX file
+            XLSX.writeFile(workbook, fileName);
+            showToast('깨끗한 XLSX 엑셀 파일이 다운로드되었습니다.', 'success');
+        }
+
+        // Helper Utility: Toast Notification
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            let bgClass = 'bg-slate-800 text-white';
+            if (type === 'success') bgClass = 'bg-emerald-600 text-white';
+            if (type === 'error') bgClass = 'bg-red-600 text-white';
+
+            toast.className = `fixed bottom-5 right-5 px-4 py-2.5 rounded-lg shadow-lg text-xs font-bold transition-all z-50 transform translate-y-2 opacity-0 flex items-center gap-2 ${bgClass}`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${message}</span>`;
+            
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // Helper Utility: Escape HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
