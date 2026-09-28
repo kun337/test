@@ -18,7 +18,7 @@
             theme: {
                 extend: {
                     colors: {
-                        osstem: {
+                        austem: {
                             blue: '#003366',
                             navy: '#0A192F',
                             orange: '#FF6600',
@@ -58,10 +58,10 @@
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
 
     <!-- Top Header Navigation -->
-    <header class="bg-osstem-blue text-white shadow-md sticky top-0 z-50">
+    <header class="bg-austem-blue text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="bg-osstem-orange text-white font-black px-2.5 py-1 rounded text-lg tracking-wider">OSSTEM</div>
+                <div class="bg-austem-orange text-white font-black px-2.5 py-1 rounded text-lg tracking-wider">AUSTEM</div>
                 <div>
                     <h1 class="text-lg font-bold leading-none">영업팀 예산 관리 시스템</h1>
                     <span class="text-xs text-blue-200">Manager Dashboard & Budget Control</span>
@@ -88,11 +88,11 @@
         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
             <div class="flex flex-wrap items-center gap-3">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                    <i class="fa-solid fa-filter text-osstem-blue"></i> 조회 필터:
+                    <i class="fa-solid fa-filter text-austem-blue"></i> 조회 필터:
                 </span>
                 
                 <!-- Month Filter -->
-                <select id="filterMonth" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-osstem-blue focus:outline-none">
+                <select id="filterMonth" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-austem-blue focus:outline-none">
                     <option value="ALL">전체 월 보기</option>
                     <option value="2026-09" selected>2026년 9월 (현재월)</option>
                     <option value="2026-08">2026년 8월</option>
@@ -100,7 +100,7 @@
                 </select>
 
                 <!-- Team Member Filter -->
-                <select id="filterMember" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-osstem-blue focus:outline-none">
+                <select id="filterMember" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-austem-blue focus:outline-none">
                     <option value="ALL">전체 팀원</option>
                     <option value="김민수 팀장">김민수 팀장</option>
                     <option value="이영희 과장">이영희 과장</option>
@@ -110,7 +110,7 @@
                 </select>
 
                 <!-- Category Filter -->
-                <select id="filterCategory" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-osstem-blue focus:outline-none">
+                <select id="filterCategory" onchange="applyFilters()" class="text-sm bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 font-medium focus:ring-2 focus:ring-austem-blue focus:outline-none">
                     <option value="ALL">전체 예산 항목</option>
                     <option value="고객 접대비">고객 접대비</option>
                     <option value="제품 설명회/세미나">제품 설명회/세미나</option>
@@ -136,19 +136,37 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
             <!-- Card 1: Total Cumulative Spend -->
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-2 h-full bg-osstem-blue"></div>
+                <div class="absolute top-0 right-0 w-2 h-full bg-austem-blue"></div>
                 <div class="flex justify-between items-start mb-2">
                     <div>
                         <p class="text-xs font-bold text-slate-500 tracking-wide uppercase">전체 누적 사용액</p>
                         <h3 id="kpiTotalSpend" class="text-2xl font-black text-slate-900 mt-1">0 원</h3>
                     </div>
-                    <div class="p-2.5 bg-blue-50 rounded-lg text-osstem-blue">
+                    <div class="p-2.5 bg-blue-50 rounded-lg text-austem-blue">
                         <i class="fa-solid fa-won-sign text-xl"></i>
                     </div>
                 </div>
                 <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
                     <span class="text-slate-500">선택 조건 내 집계금액</span>
                     <span id="kpiMonthlyTargetRatio" class="font-bold text-emerald-600">월 예산 소진율: 0%</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Top Category This Month -->
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-austem-orange"></div>
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="text-xs font-bold text-slate-500 tracking-wide uppercase">이번달 최대 사용항목</p>
+                        <h3 id="kpiTopCategory" class="text-xl font-black text-slate-900 mt-1 truncate max-w-[200px]">-</h3>
+                    </div>
+                    <div class="p-2.5 bg-orange-50 rounded-lg text-austem-orange">
+                        <i class="fa-solid fa-chart-pie text-xl"></i>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                    <span id="kpiTopCategoryAmount" class="text-slate-600 font-semibold">0 원</span>
+                    <span id="kpiTopCategoryShare" class="font-bold text-austem-orange">전체 중 0%</span>
                 </div>
             </div>
 
@@ -196,7 +214,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-pie text-osstem-orange"></i>
+                            <i class="fa-solid fa-chart-pie text-austem-orange"></i>
                             항목별 예산 분포
                         </h2>
                         <span class="text-xs text-slate-400">지출 비중 및 주요 집계</span>
@@ -216,7 +234,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                            <i class="fa-solid fa-users text-osstem-blue"></i>
+                            <i class="fa-solid fa-users text-austem-blue"></i>
                             팀원별 누적 사용금액
                         </h2>
                         <span class="text-xs text-slate-400">팀원별 사용 한도 체크</span>
@@ -236,7 +254,7 @@
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="bg-slate-800 text-white px-6 py-3 flex items-center justify-between">
                 <h2 class="text-sm font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-pen-to-square text-osstem-orange"></i>
+                    <i class="fa-solid fa-pen-to-square text-austem-orange"></i>
                     영업 예산 사용 내역 신규 등록
                 </h2>
                 <span class="text-xs text-slate-300">* 관리자 입력 전용</span>
@@ -250,7 +268,7 @@
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             1. 팀원 선택 <span class="text-red-500">*</span>
                         </label>
-                        <select id="inputMember" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                        <select id="inputMember" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-austem-blue focus:bg-white focus:outline-none">
                             <option value="">팀원을 선택하세요</option>
                             <option value="김민수 팀장">김민수 팀장</option>
                             <option value="이영희 과장">이영희 과장</option>
@@ -265,7 +283,7 @@
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             2. 사용 일자 / 해당 월 <span class="text-red-500">*</span>
                         </label>
-                        <input type="date" id="inputDate" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                        <input type="date" id="inputDate" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-austem-blue focus:bg-white focus:outline-none">
                     </div>
 
                     <!-- 3. 예산 항목 -->
@@ -273,7 +291,7 @@
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             3. 예산 항목 <span class="text-red-500">*</span>
                         </label>
-                        <select id="inputCategory" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                        <select id="inputCategory" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-austem-blue focus:bg-white focus:outline-none">
                             <option value="">항목을 선택하세요</option>
                             <option value="고객 접대비">고객 접대비</option>
                             <option value="제품 설명회/세미나">제품 설명회/세미나</option>
@@ -289,7 +307,7 @@
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">
                             4. 사용금액 (원) <span class="text-red-500">*</span>
                         </label>
-                        <input type="number" id="inputAmount" min="0" step="1000" placeholder="예: 150000" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                        <input type="number" id="inputAmount" min="0" step="1000" placeholder="예: 150000" required class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-austem-blue focus:bg-white focus:outline-none">
                     </div>
                 </div>
 
@@ -297,9 +315,9 @@
                 <div class="mt-4 flex flex-col md:flex-row gap-4 items-end">
                     <div class="flex-1">
                         <label class="block text-xs font-bold text-slate-700 mb-1">적요 / 세부 사용목적 (선택)</label>
-                        <input type="text" id="inputNote" placeholder="예: 서울 치과 원장단 세미나 석식 접대" class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-osstem-blue focus:bg-white focus:outline-none">
+                        <input type="text" id="inputNote" placeholder="예: 서울 치과 원장단 세미나 석식 접대" class="w-full text-sm bg-slate-50 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-austem-blue focus:bg-white focus:outline-none">
                     </div>
-                    <button type="submit" class="w-full md:w-auto bg-osstem-orange hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 shadow-md">
+                    <button type="submit" class="w-full md:w-auto bg-austem-orange hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold transition flex items-center justify-center gap-2 shadow-md">
                         <i class="fa-solid fa-plus"></i>
                         <span>내역 등록하기</span>
                     </button>
@@ -312,7 +330,7 @@
             <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50">
                 <div>
                     <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-table-list text-osstem-blue"></i>
+                        <i class="fa-solid fa-table-list text-austem-blue"></i>
                         예산 사용 내역목록
                     </h2>
                     <p class="text-xs text-slate-500 mt-0.5">요청 표준 포맷: [날짜 | 팀원 | 항목 | 금액]</p>
@@ -322,7 +340,7 @@
                 <div class="flex items-center gap-3">
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="내역 내 검색..." class="text-xs bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-osstem-blue w-48">
+                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="내역 내 검색..." class="text-xs bg-white border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-austem-blue w-48">
                     </div>
                     <button onclick="exportToExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5">
                         <i class="fa-solid fa-file-excel"></i>
@@ -352,7 +370,7 @@
 
             <!-- Table Footer Summary -->
             <div class="bg-slate-100 px-6 py-3 border-t border-slate-200 flex justify-between items-center text-xs font-bold text-slate-700">
-                <span>조회 결과 총 <span id="tableFilteredCount" class="text-osstem-blue font-black">0</span> 건</span>
+                <span>조회 결과 총 <span id="tableFilteredCount" class="text-austem-blue font-black">0</span> 건</span>
                 <span>합계 금액: <span id="tableFilteredTotal" class="text-slate-900 text-sm font-black">0</span> 원</span>
             </div>
         </div>
@@ -360,12 +378,12 @@
     </main>
 
     <footer class="bg-slate-900 text-slate-400 py-6 mt-8 text-center text-xs border-t border-slate-800">
-        <p>오스템임플란트 영업관리본부 | 영업팀 예산 관리 대시보드 v2.5</p>
-        <p class="text-slate-500 mt-1">본 시스템은 오스템 영업 관리자의 실시간 의사결정 및 예산 관리를 위해 최적화되었습니다.</p>
+        <p>AUSTEM 영업관리본부 | 영업팀 예산 관리 대시보드 v2.5</p>
+        <p class="text-slate-500 mt-1">본 시스템은 AUSTEM 영업 관리자의 실시간 의사결정 및 예산 관리를 위해 최적화되었습니다.</p>
     </footer>
 
     <script>
-        // Initial Mock Dataset for Osstem Sales Team
+        // Initial Mock Dataset for Austem Sales Team
         let budgetData = [
             { id: 1, date: '2026-09-28', month: '2026-09', member: '최성민 대리', category: '고객 접대비', amount: 350000, note: '강남 대형 치과 원장 만찬 간담회' },
             { id: 2, date: '2026-09-25', month: '2026-09', member: '이영희 과장', category: '제품 설명회/세미나', amount: 1200000, note: '임플란트 신제품 Q-Master 설명회 대관' },
@@ -757,7 +775,7 @@
 
             // Current date string for filename
             const todayStr = new Date().toISOString().slice(0, 10);
-            const fileName = `오스템영업팀_예산내역_${todayStr}.xlsx`;
+            const fileName = `AUSTEM영업팀_예산내역_${todayStr}.xlsx`;
 
             // Export pure XLSX file
             XLSX.writeFile(workbook, fileName);
